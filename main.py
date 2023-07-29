@@ -1,4 +1,5 @@
 import savings
+import data_analytics
 
 
 def interactive_savings_calculator():
@@ -36,12 +37,14 @@ def setup_comparison(starting=0):
         else:
             break
     simple_saving = savings.simple_saving_rate(starting, amount, years)
-    complex_saving = savings.complex_saving_rate(starting, amount, bonus, years)
+    complex_saving = data_analytics.salary_simple_savings(starting, amount, bonus, 100000, years)
     simple_interest = savings.simple_compound_saving_rate(starting, amount, years, rate)
     complex_interest = savings.complex_compound_saving_rate(starting, amount, bonus, years, rate)
+    interest_amt = data_analytics.get_total_interest(starting, amount, bonus, rate, years)
     print("The results are as follows: ")
     print(f"Simple savings: {simple_saving}, Complex savings: {complex_saving}, "
-          f"Simple interest {simple_interest}, Complex interest {complex_interest}")
+          f"Simple interest: {simple_interest}, Complex interest: {complex_interest}, "
+          f"Total interest gained: {interest_amt}")
 
     return complex_interest
 
