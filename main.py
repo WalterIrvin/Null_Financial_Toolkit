@@ -1,4 +1,5 @@
 import data_analytics
+import panel as pn
 
 
 def interactive_savings_calculator():
@@ -39,5 +40,23 @@ def setup_comparison(starting=0):
 
 
 if __name__ == '__main__':
-    interactive_savings_calculator()
+    tabs = pn.Tabs(
+        ("Main", pn.Column("Example text here.")),
+        ("Salary Info", pn.Column("WIP")),
+        ("Interest Table", pn.Column("WIP")),
+        dynamic=True
+    )
+
+    starting_amt = pn.widgets.FloatSlider(name="Starting funds", start=0, end=10, value=2)
+    salary_growth = pn.widgets.FloatSlider(name="Bonus per year", start=0, end=10, value=1)
+    salary = pn.widgets.FloatSlider(name="Income", start=0, end=100, value=3)
+    salary_cap = pn.widgets.FloatSlider(name="Income Ceiling", start=0, end=100, value=0)
+    interest_rate = pn.widgets.FloatSlider(name="Interest rate", start=0, end=0.08, value=0)
+    years = pn.widgets.IntSlider(name="Years", start=0, end=100, value=0)
+    template = pn.template.FastListTemplate(title="Financial Toolkit", sidebar=[starting_amt, salary, salary_growth,
+                                                                                salary_cap, interest_rate, years],
+                                            main=tabs)
+    template.servable()
+    template.show()
+    #interactive_savings_calculator()
 
