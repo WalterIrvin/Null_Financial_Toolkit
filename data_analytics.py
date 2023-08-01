@@ -1,87 +1,79 @@
 import panel as pn
-import plotly.express as px
 import pandas as pd
+import hvplot.pandas
+
+
+def salary_growth(years, income, bonus, cap):
+    salary = income
+    for i in range(years):
+        if salary + bonus < cap:
+            salary += bonus
+        else:
+            return cap
+    return salary
+
+
+def growth(starting, years, income=0, bonus=0, cap=0, interest=0):
+    base = starting
+    total = starting
+    salary = income
+    for i in range(years):
+        total += salary
+        base += salary
+        salary = salary_growth(i, salary, bonus, cap)
+        total += total * interest
+    return [total, base]
 
 
 class DataAnalysis:
     def __init__(self):
-        self.starting = pn.widgets.FloatInput(name="Starting funds", value=1000)
+        self.starting = pn.widgets.FloatInput(name="Starting funds")
         self.salary = pn.widgets.FloatInput(name="Income")
         self.salary_bonus = pn.widgets.FloatInput(name="Bonus per year")
         self.salary_cap = pn.widgets.FloatInput(name="Income Ceiling")
         self.interest_rate = pn.widgets.FloatInput(name="Interest rate")
-        self.years = pn.widgets.IntSlider(name="Years", start=0, end=100, value=0)
-        self.dataframe = self.set_dataframe()
-
-        self.starting.param.watch(self.update, "value")
-        self.salary.param.watch(self.update, "value")
-        self.salary_bonus.param.watch(self.update, "value")
-        self.salary_cap.param.watch(self.update, "value")
-        self.interest_rate.param.watch(self.update, "value")
-        self.years.param.watch(self.update, "value")
+        self.years = pn.widgets.IntInput(name="Years")
+        self.dataframe = self.update_dataframe()
         self.main_fig = None
 
-    def update(self, event):
-        self.update_dataframe()
+    def set_update(self, func):
+        self.starting.param.watch(func, "value")
+        self.salary.param.watch(func, "value")
+        self.salary_bonus.param.watch(func, "value")
+        self.salary_cap.param.watch(func, "value")
+        self.interest_rate.param.watch(func, "value")
+        self.years.param.watch(func, "value")
 
     def update_dataframe(self):
-        dic = {"Current Funds": self.starting.value, "Base Income": self.salary.value,
-               "Yearly Bonus": self.salary_bonus.value, "Income Ceiling": self.salary_cap.value,
-               "Interest Rate": self.interest_rate.value, "Year": self.years.value}
-        self.dataframe = pd.concat([self.dataframe, pd.DataFrame([dic])], ignore_index=True)
-
-    def set_dataframe(self):
-        df = pd.DataFrame([[self.starting.value, self.salary.value, self.salary_bonus.value,
-                          self.salary_cap.value, self.interest_rate.value, self.years.value]],
-                          columns=["Current Funds", "Base Income", "Yearly Bonus",
-                                   "Income Ceiling", "Interest Rate", "Year"])
-        df.set_index("Year")
+        data_entries = []
+        for i in range(self.years.value):
+            cur_total, cur_base = growth(self.starting.value, i, self.salary.value, self.salary_bonus.value,
+                               self.salary_cap.value, self.interest_rate.value)
+            total_interest = cur_total - cur_base
+            cur_salary = salary_growth(i, self.salary.value, self.salary_bonus.value, self.salary_cap.value)
+            # ["total", "total_interest", "base", "salary", "year"]
+            data_entries.append([cur_total, total_interest, cur_base, cur_salary, i])
+        df = pd.DataFrame(data_entries, columns=["total", "total_interest", "base", "income", "year"])
+        print(df)
         return df
 
     def return_sidebar(self):
         return [self.starting, self.salary, self.salary_bonus, self.salary_cap, self.interest_rate, self.years]
 
-    def salary_growth(self, years):
-        salary = self.salary.value
-        for i in range(years):
-            if salary + self.salary_bonus.value < self.salary_cap.value:
-                salary += self.salary_bonus.value
-            else:
-                return self.salary_cap.value
-        return salary
-
-    def growth(self, years, bonus=False, interest=False):
-        base = self.starting.value
-        total = self.starting.value
-        salary = self.salary.value
-        for i in range(years):
-            total += salary
-            base += salary
-            if bonus:
-                salary = self.salary_growth(i)
-            if interest:
-                total += total * self.interest_rate.value
-        return [total, base]
-
     def view_main(self):
-        self.main_fig = px.bar(self.dataframe, x="Year", y="Current Funds")
-        return self.main_fig
+        layout = pn.Column(
+            self.dataframe.hvplot.bar(x="year", y="total"),
+        )
+        return layout
 
     def view_salary_info(self):
-        return "Test"
+        layout = pn.Column(
+            self.dataframe.hvplot.bar(x="year", y="income")
+        )
+        return layout
 
     def view_interest_info(self):
-        return "Test"
-
-    def print_report(self, years):
-        total, base = self.growth(years, True, True)
-        interest = total - base
-        print("Generating report for the following conditions:"
-              f"Starting amount: {self.starting.value}\n"
-              f"Starting salary: {self.salary.value}\n"
-              f"Salary increase per year: {self.salary_bonus.value}\n"
-              f"Salary Cap: {self.salary_cap.value}\n"
-              f"Interest per Year: {self.interest_rate.value}\n"
-              f"Total Interest generated: {interest.value}\n"
-              f"Total base saved: {base.value}\n"
-              f"Total saved: {total.value}\n")
+        layout = pn.Column(
+            self.dataframe.hvplot.bar(stacked=True, x="year", y=["base", "total_interest"])
+        )
+        return layout
