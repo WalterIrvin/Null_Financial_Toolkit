@@ -63,7 +63,7 @@ class DataAnalysis:
         self.salary_bonus = pn.widgets.FloatInput(name="Bonus per year")
         self.salary_cap = pn.widgets.FloatInput(name="Income Ceiling")
         self.interest_rate = pn.widgets.FloatInput(name="Interest rate")
-        self.years = pn.widgets.IntInput(name="Years")
+        self.years = pn.widgets.IntInput(name="Years", start=1)
         self.dataframe = pd.DataFrame()
         self.update_dataframe()
 
@@ -85,12 +85,13 @@ class DataAnalysis:
         data_entries = []
         for i in range(self.years.value):
             cur_total, cur_base = growth(self.starting.value, i, self.salary.value, self.salary_bonus.value,
-                               self.salary_cap.value, self.interest_rate.value)
+                                         self.salary_cap.value, self.interest_rate.value)
             total_interest = cur_total - cur_base
             cur_salary = salary_growth(i, self.salary.value, self.salary_bonus.value, self.salary_cap.value)
             # ["total", "total_interest", "base", "salary", "year"]
             data_entries.append([cur_total, total_interest, cur_base, cur_salary, i])
         self.dataframe = pd.DataFrame(data_entries, columns=["total", "total_interest", "base", "income", "year"])
+        self.dataframe.round(2)
 
     def return_sidebar(self):
         """Return function to easily group the parameters to place in the sidebar of panel template.
@@ -105,7 +106,7 @@ class DataAnalysis:
         :return layout: - the panel column showing the respective graph data.
         """
         layout = pn.Column(
-            self.dataframe.hvplot.bar(x="year", y="total"),
+            self.dataframe.hvplot.bar(x="year", y="total", yformatter="%.2f"),
         )
         return layout
 
@@ -115,7 +116,7 @@ class DataAnalysis:
         :return layout: - the panel column showing the respective graph data.
         """
         layout = pn.Column(
-            self.dataframe.hvplot.bar(x="year", y="income")
+            self.dataframe.hvplot.bar(x="year", y="income", yformatter="%.2f")
         )
         return layout
 
@@ -125,7 +126,8 @@ class DataAnalysis:
         :return layout: - the panel column showing the respective graph data.
         """
         layout = pn.Column(
-            self.dataframe.hvplot.bar(stacked=True, x="year", y=["base", "total_interest"])
+            self.dataframe.hvplot.bar(stacked=True, x="year", y=["base", "total_interest"],
+                                      yformatter="%.2f")
         )
         return layout
 
